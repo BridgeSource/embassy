@@ -443,6 +443,9 @@ impl AnyChannel {
                 ch.mar().write_value(mem_addr as u32);
                 ch.ndtr().write(|w| w.set_ndt(mem_len as u16));
                 ch.cr().write(|w| {
+                    // issue with using dma with the dac on the g474 when psize != msize
+                    // https://github.com/embassy-rs/embassy/issues/2783
+                    // can force 32b here but maybe it's best to address it in the dac .write
                     w.set_psize(peri_size.into());
                     w.set_msize(mem_size.into());
                     w.set_minc(incr_mem);

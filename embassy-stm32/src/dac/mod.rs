@@ -95,6 +95,8 @@ pub enum ValueArray<'a> {
     Bit12Left(&'a [u16]),
     /// 12 bit values stored in a u16, right-aligned
     Bit12Right(&'a [u16]),
+    /// 12 bit values stored in a u32, right-aligned
+    Bit12RightU32(&'a [u32]),
 }
 
 #[derive(Debug)]
@@ -187,6 +189,7 @@ impl<'d, T: Instance, C: Channel> DacChannel<'d, T, C, Async> {
     /// flag can be set. This configures a circular DMA transfer that continually outputs
     /// `data`. Note that for performance reasons in circular mode the transfer-complete
     /// interrupt is disabled.
+    // 12/02/25 - patched to force u32 to address https://github.com/embassy-rs/embassy/issues/2783
     #[cfg(not(gpdma))]
     pub async fn write(&mut self, data: ValueArray<'_>, circular: bool) {
         // Enable DAC and DMA
@@ -212,6 +215,9 @@ impl<'d, T: Instance, C: Channel> DacChannel<'d, T, C, Async> {
             },
             ValueArray::Bit12Right(buf) => unsafe {
                 dma.write(buf, T::regs().dhr12r(C::IDX).as_ptr() as *mut u16, tx_options)
+            },
+            ValueArray::Bit12RightU32(buf) => unsafe {
+                dma.write(buf, T::regs().dhr12r(C::IDX).as_ptr() as *mut u32, tx_options)
             },
         };
 
